@@ -49,6 +49,8 @@ public class Melody{
 			ret+=""+lengths[length];
 			i+=length;
 		}
+		ret = ret.substring(0, ret.length() - 2);
+		ret +="4 \\bar\"|.\"";
 		return ret;
 	}
 
