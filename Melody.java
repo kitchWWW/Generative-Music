@@ -4,10 +4,10 @@ import java.util.ArrayList;
 public class Melody{
 
 
-	static double MUT_BUMP_PRB = .02;
-	static double MUT_NEWNOTE_PRB = .02;
-	static double MUT_JOIN_PRB = .02;
-	static double BREED_SWAP_PRB = .1;
+	static double MUT_BUMP_PRB = .03;
+	static double MUT_NEWNOTE_PRB = .01;
+	static double MUT_JOIN_PRB = .05;
+	static double BREED_SWAP_PRB = .05;
 
 	static String[] noteNames = {"c","cis","d","dis","e","f","fis","g","gis","a","ais","b"};
 

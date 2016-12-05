@@ -37,9 +37,9 @@ public class runner {
 		System.out.println("Initial Dataset");
 		
 		//now we do everything.
+		ProgressBar pb = new ProgressBar(50);
 		for(int i = 0; i < ITERATIONS; i ++){
        		PriorityQueue<Melody> queue = new PriorityQueue<Melody>(DATASET_SIZE, comparator);
-			
 			//rank every melody, put it in a queue
 			for(int j = 0; j <DATASET_SIZE; j ++){
 				queue.add(dataset.get(j));
@@ -74,7 +74,9 @@ public class runner {
 				dataset.get(j).fitness = rank(dataset.get(j));
 			}
 			vitals(i);
+			pb.update(((double)i)/ITERATIONS);
 		}
+		pb.done();
 
 		for(int i = 0; i <DATASET_SIZE; i++){
 			dataset.get(i).fitness = rank(dataset.get(i));
@@ -113,14 +115,16 @@ public class runner {
 			//if the note is part of the chord at all
 			for(int j = 0; j<chordTones[chordIndex].length; j++) {
 				if(cur%12 == chordTones[chordIndex][j]){
-					rank += 10;
+					rank += 30;
 				}
 			}
 
 			//if it is diatonic
 			for(int j = 0; j< diatonicTones.length; j ++){
 				if(cur%12 == diatonicTones[j]){
-					rank += 30;
+					rank += 170;
+				}else{
+					rank -=20;
 				}
 			}
 
@@ -133,22 +137,22 @@ public class runner {
 				if(i % 4 == 0 && cur != m.melody.get(i-1)){rank += 30;}
 
 				//if note changes from the previous strong beat
-				if(i % 4 == 0 && cur != m.melody.get(i-4)){rank += 30;}
+				if(i % 4 == 0 && cur != m.melody.get(i-4)){rank += 50;}
 
 				//if note changes on an 8th note
-				if(cur != m.melody.get(i-1) && i % 2 == 0){rank += 20;}
+				if(cur != m.melody.get(i-1) && i % 2 == 0){rank += 30;}
 				
 				//if note changes does NOT change on a 16th note
 				if(cur == m.melody.get(i-1) && i % 2 == 1){rank += 10;}
 
 				//if note is stepwise from one before
-				if(Math.abs(cur-m.melody.get(i-1)) <3){rank += 20;}
+				if(Math.abs(cur-m.melody.get(i-1)) <3){rank += 30;}
 				
 				//if note is a huge from one before
-				if(Math.abs(cur-m.melody.get(i-1)) >8){rank -= 90;}
+				if(Math.abs(cur-m.melody.get(i-1)) >8){rank -= 200;}
 
 				//if note is a TRITONE D:
-				if(Math.abs(cur-m.melody.get(i-1))%12==6){rank -= 100;}
+				if(Math.abs(cur-m.melody.get(i-1))%12==6){rank -= 200;}
 
 			
 			}
