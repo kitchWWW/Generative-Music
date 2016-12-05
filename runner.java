@@ -37,7 +37,6 @@ public class runner {
 		System.out.println("Initial Dataset");
 		
 		//now we do everything.
-		ProgressBar pb = new ProgressBar(50);
 		for(int i = 0; i < ITERATIONS; i ++){
        		PriorityQueue<Melody> queue = new PriorityQueue<Melody>(DATASET_SIZE, comparator);
 			//rank every melody, put it in a queue
@@ -74,9 +73,7 @@ public class runner {
 				dataset.get(j).fitness = rank(dataset.get(j));
 			}
 			vitals(i);
-			pb.update(((double)i)/ITERATIONS);
 		}
-		pb.done();
 
 		for(int i = 0; i <DATASET_SIZE; i++){
 			dataset.get(i).fitness = rank(dataset.get(i));
