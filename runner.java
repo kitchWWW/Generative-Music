@@ -1,224 +1,114 @@
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.PriorityQueue;
+import java.util.Arrays;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-
-
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
 
 public class runner {
-	static int DATASET_SIZE;
-	static int ITERATIONS;
-	static int MELODY_LENGTH = 4*4*4+1; 	//4 bars, 4/4 16th as the smallest divison, plus a down beat
-	static int[][] chordTones = {{0,4,7},{5,9,0},{2,5,9},{2,7,11,5},{0,4}};
-	static int[] diatonicTones = {0,2,4,5,7,9,11};
-	static String log = "[0";
-	static String TIMESTAMP = "";
 
-	//melody values are just midi
-	//-1 = rest
-	//init an cool dataset of RANDOM :D (size? 100 or something to start)
-	static ArrayList<Melody> dataset = new ArrayList<>();
+	ArrayList<String> clefs;
 
 	public static void main(String[] args) {
-		DATASET_SIZE = Integer.parseInt(args[0]);
-		ITERATIONS = Integer.parseInt(args[1]);
-		TIMESTAMP = args[2];
-		Comparator<Melody> comparator = new MelodyComp();
+		//Following should be moved to be taken as arguments
+		int totalParts = 4;
+		ArrayList<ArrayList<Integer>> possibleNotes = new ArrayList<>();
+		ArrayList<String> clefs = new ArrayList<>();
+		ArrayList<String> names = new ArrayList<>(Arrays.asList("Oboe","Marimba","Guitar","Marimba"));
 
-		for(int i = 0; i < DATASET_SIZE; i ++){
-			dataset.add(new Melody(MELODY_LENGTH));
-			dataset.get(i).fitness = rank(dataset.get(i));
-		}
-		//k. That inits our dataset now.
+//		ArrayList<String> names = new ArrayList<>(Arrays.asList("Violin 1","Violin 2","Viola","Cello"));
 		
-		System.out.println("Initial Dataset");
+
+		 possibleNotes.add(new ArrayList<>(Arrays.asList(71,72,74,76)));
+		 possibleNotes.add(new ArrayList<>(Arrays.asList(65,67,71,72)));
+		 possibleNotes.add(new ArrayList<>(Arrays.asList(62,64,67,69)));
+		 possibleNotes.add(new ArrayList<>(Arrays.asList(59,60,64,65)));
+
+		// possibleNotes.add(new ArrayList<>(Arrays.asList(66,69,70,71)));
+		// possibleNotes.add(new ArrayList<>(Arrays.asList(61,63,65,67)));
+		// possibleNotes.add(new ArrayList<>(Arrays.asList(50,52,56,58)));
+		// possibleNotes.add(new ArrayList<>(Arrays.asList(44,46,49,51)));
+
+//		possibleNotes.add(new ArrayList<>(Arrays.asList(69,72,74,76)));
+//		possibleNotes.add(new ArrayList<>(Arrays.asList(64,65,67,69)));
+//		possibleNotes.add(new ArrayList<>(Arrays.asList(53,55,57,59)));
+//		possibleNotes.add(new ArrayList<>(Arrays.asList(45,48,52,53)));
+
+
+
+		String  timeStamp = args[0];
+
+
+
+
+		ArrayList<ArrayList<TempNote>> oneTemp = MovementOne.generate(totalParts);
+		//ArrayList<String> oneParts = tempNotesToParts(oneTemp,possibleNotes);		
+		//buildParts(timeStamp,"I", oneParts,names);
+
+		ArrayList<ArrayList<TempNote>> twoTemp = MovementTwo.generate(totalParts,possibleNotes,TempNote.strip(oneTemp));
+		//ArrayList<String> twoParts = tempNotesToParts(twoTemp,possibleNotes);		
+		//buildParts(timeStamp,"II", twoParts,names);
 		
-		//now we do everything.
-		for(int i = 0; i < ITERATIONS; i ++){
-       		PriorityQueue<Melody> queue = new PriorityQueue<Melody>(DATASET_SIZE, comparator);
-			//rank every melody, put it in a queue
-			for(int j = 0; j <DATASET_SIZE; j ++){
-				queue.add(dataset.get(j));
-			}
-			
-			//clear the old dataset, about to make a new one
-			dataset.clear();
 
-			//"breed" the best melodies
-			if(Math.random()>.5){queue.poll();}
-			//50% chance of discarding the most fit
-			//prevents case where the top tier are paird mating with eachother not chaning
-
-			for(int j = 0; j <DATASET_SIZE/4; j ++){
-				Melody curA = queue.poll();
-				Melody curB = queue.poll();
-				Melody childA = Melody.breed(curA, curB);
-				Melody childB = Melody.breed(curA, curB);
-				Melody childC = Melody.breed(curA, curB);
-				dataset.add(childA);
-				dataset.add(childB);
-				dataset.add(childC);
-			}
-
-			//Add back in the less-good melodies
-			while(dataset.size() < DATASET_SIZE){
-				dataset.add(queue.poll());
-			}
-			//do something about mutating them
-			for(int j = 0; j <DATASET_SIZE; j ++){
-				dataset.set(j,Melody.mutate(dataset.get(j)));
-				dataset.get(j).fitness = rank(dataset.get(j));
-			}
-			vitals(i);
+		for(int i = 0; i < totalParts; i ++){
+			oneTemp.get(i).add(new TempNote("\\bar\"||\" \n \\break \n "));
+			oneTemp.get(i).addAll(twoTemp.get(i));
 		}
+		ArrayList<String> finalParts = tempNotesToParts(oneTemp,possibleNotes);		
+		//System.out.println(finalParts);
+		//System.out.println(oneTemp);
+		buildParts(timeStamp,"III", finalParts,names);
 
-		for(int i = 0; i <DATASET_SIZE; i++){
-			dataset.get(i).fitness = rank(dataset.get(i));
-		}
 
-		Collections.sort(dataset,comparator);
-		System.out.println("Finished, final Dataset");
-		printDataset("out/"+TIMESTAMP);
 	}
-
-
-	public static Double rank(Melody m){
-		double rank = 0;
-
-		for(int i = 0; i < m.melody.size(); i++){
-			int cur = m.melody.get(i);
-			
-			//if note is "do" to start
-			if(cur%12 == 0 && i == 0){
-				rank +=300;
-			}
-			//if note is "do" to finish
-			if(cur%12 == 0 && i == m.melody.size()-1){
-				rank +=300;
-			}
-			//if note is part of the chord on strong beat
-			int chordIndex = i/16;
-			if(i%4 == 0){
-				for(int j = 0; j<chordTones[chordIndex].length; j++) {
-					if(cur%12 == chordTones[chordIndex][j]){
-						rank += 50;
-					}
-				}
-			}
-
-			//if the note is part of the chord at all
-			for(int j = 0; j<chordTones[chordIndex].length; j++) {
-				if(cur%12 == chordTones[chordIndex][j]){
-					rank += 30;
-				}
-			}
-
-			//if it is diatonic
-			for(int j = 0; j< diatonicTones.length; j ++){
-				if(cur%12 == diatonicTones[j]){
-					rank += 170;
-				}else{
-					rank -=20;
-				}
-			}
-
-			if(i!=0){	//comparisons to previous notes
-
-				//if note is a repeated note
-				if(cur == m.melody.get(i-1)){rank += 10;}
-
-				//if note changes on a new beat
-				if(i % 4 == 0 && cur != m.melody.get(i-1)){rank += 30;}
-
-				//if note changes from the previous strong beat
-				if(i % 4 == 0 && cur != m.melody.get(i-4)){rank += 50;}
-
-				//if note changes on an 8th note
-				if(cur != m.melody.get(i-1) && i % 2 == 0){rank += 30;}
-				
-				//if note changes does NOT change on a 16th note
-				if(cur == m.melody.get(i-1) && i % 2 == 1){rank += 10;}
-
-				//if note is stepwise from one before
-				if(Math.abs(cur-m.melody.get(i-1)) <3){rank += 30;}
-				
-				//if note is a huge from one before
-				if(Math.abs(cur-m.melody.get(i-1)) >8){rank -= 200;}
-
-				//if note is a TRITONE D:
-				if(Math.abs(cur-m.melody.get(i-1))%12==6){rank -= 200;}
-
-			
-			}
-			//if note is in a reasonable range (g3 - e5)
-			if(cur > 42 && cur < 65) {rank += 5;}
+	private static ArrayList<String> tempNotesToParts(ArrayList<ArrayList<TempNote>> tempNotes,
+		ArrayList<ArrayList<Integer>> possibleNotes){
+		ArrayList<String> ret = new ArrayList<>();
+		for(int i = 0; i < tempNotes.size(); i ++){
+			//swap out the temp notes for real ones, then use toString to make it a strin
+			ret.add(Note.toString(TempNote.swap(tempNotes.get(i),possibleNotes.get(i))));
 		}
+		return ret;
+	}	
 
-		//System.out.println(rank);
-		return rank;
-	}
-
-	private static void vitals(int index){
-		double average = 0;
-		for(int i = 0; i < DATASET_SIZE; i ++){
-			double cur = dataset.get(i).fitness;
-			average += cur;
-		}
-		average = average / DATASET_SIZE;
-		log+= ", "+average;
-	}
-
-	private static void outToFiles(String status){
+	private static void buildParts(String timeStamp, String title,
+		ArrayList<String> parts, ArrayList<String> names){
 		try {
-			PrintWriter writer = new PrintWriter(status+"/dataset.txt", "UTF-8");
-			for(int i = 0; i < DATASET_SIZE; i ++){
-		 		writer.println(dataset.get(i));
-			}
+
+			String res = "";
+
+			File file = new File("templates/Temp1.ly");
+
+	        Scanner sc = new Scanner(file);
+
+	        while (sc.hasNextLine()) {
+	            String i = sc.nextLine();
+	            //System.out.println(i);
+	            if(i.startsWith("%part")){
+	            	i = i.substring(5);
+	            	int index = Integer.parseInt(i);
+	            	res+= parts.get(index) +"\n";
+	            }else if(i.startsWith("%name")){
+	            	i = i.substring(5);
+	            	int index = Integer.parseInt(i);
+	            	res+= names.get(index) +"\n";
+	            }else if(i.startsWith("%timeStamp")){
+	            	res+= timeStamp +"\n";
+	            }
+	            else{
+	            	res+=i + "\n";
+	            }
+	        }
+        	sc.close();
+			PrintWriter writer = new PrintWriter("out/"+timeStamp+"/"+title+".ly", "UTF-8");
+			writer.println(res);
 			writer.close();
-		} catch (FileNotFoundException | UnsupportedEncodingException e) {
-			e.printStackTrace();
-			System.out.println("I guess we give up now...");
-		}
-		try {
-			PrintWriter writer = new PrintWriter(status+"/stats.csv", "UTF-8");
-			writer.println(log+"]");
-			writer.close();
-		} catch (FileNotFoundException | UnsupportedEncodingException e) {
-			e.printStackTrace();
-			System.out.println("I guess we give up now...");
-		}
-		Melody best = dataset.get(0);
-		try {
-			PrintWriter writer = new PrintWriter(status+"/melody.ly", "UTF-8");
-			writer.println("\\header{title = \"Grown Melody\"}\n\n\\score{\n\\absolute {");
-			writer.println(best.toLilypond());
-			writer.println("\n}\n\\midi{}\n\\layout{}\n}");
-			writer.close();
-		} catch (FileNotFoundException | UnsupportedEncodingException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("I guess we give up now...");
 		}
 	}
 
-	private static void printDataset(String status){
-		double average = 0;
-		double max = 0;
-		double min = Integer.MAX_VALUE;
-		for(int i = 0; i < DATASET_SIZE; i ++){
-			double cur = dataset.get(i).fitness;
-			average += cur;
-			if(cur> max) max = cur;
-			if(cur< min) min = cur;
-		}
-		average = average / DATASET_SIZE;
-
-		System.out.println("Average Fitness: "+average);
-		System.out.println("Min Fitness: "+min);
-		System.out.println("Max Fitness: "+max);
-		outToFiles(status);
-
-	}
 }
