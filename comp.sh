@@ -3,6 +3,7 @@ timestamp="$(date +"%s")"
 echo "starting compile script, with timestamp:"
 echo $timestamp
 mkdir out/$timestamp
+find . -name "*.class" -type f -delete
 javac runner.java
 echo "Completed compile portion"
 
@@ -17,5 +18,5 @@ open melody.png
 open melody.midi
 cd ..
 cd ..
-python plotStats.py $timestamp
-open out/$timestamp/stats.png
+find . -name "*.class" -type f -delete
+
