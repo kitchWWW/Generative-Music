@@ -11,7 +11,29 @@ import java.io.UnsupportedEncodingException;
 public class runner {
 	static int DATASET_SIZE;
 	static int ITERATIONS;
+	static int RANK_STARTDO = 300;
+	static int RANK_ENDDO = 300;
+	static int RANK_SECOND_TO_LAST = 300;
+	static int RANK_CHORD_TONE_STRONG=100;
+	static int RANK_CHORD_TONE_GEN=30;
+	static int RANK_DIATONIC_EVER=2400;
+	static int RANK_STEPWISE = 100;
+	static int RANK_CHORDAL_LEAP=20;
+	static int RANK_LEAP_PUNISH_R1 = 150;
+	static int RANK_LEAP_PUNISH_R2 = 250;
+	static int RANK_LEAP_PUNISH_R3 = 250;
+	static int RANK_LEAP_PUNISH_R4 = 1000;
+	static int RANK_LEAP_PUNISH_TRI = 500;
+	static int RANK_CHANGE_ON_STRONG = 200;
+	static int RANK_CHANGE_FROM_PREV_STRONG = 200;
+	static int RANK_QUARTER_NOTE_REWARD = 200;
+	static int RANK_DOUBLE_EIGHT_REWARD = 200;
+	static int RANK_RANGE_REWARD = 500;
+
+
 	static int MELODY_LENGTH = 4*4*4+1; 	//4 bars, 4/4 16th as the smallest divison, plus a down beat
+	
+
 	static int[][] chordTones = {{0,4,7},{5,9,0},{2,5,9},{2,7,11,5},{0,4}};
 	static int[] diatonicTones = {0,2,4,5,7,9,11};
 	static String log = "[0";
@@ -26,6 +48,26 @@ public class runner {
 		DATASET_SIZE = Integer.parseInt(args[0]);
 		ITERATIONS = Integer.parseInt(args[1]);
 		TIMESTAMP = args[2];
+
+		RANK_STARTDO = Integer.parseInt(args[3]);
+		RANK_ENDDO = Integer.parseInt(args[4]);
+		RANK_SECOND_TO_LAST = Integer.parseInt(args[5]);
+		RANK_CHORD_TONE_STRONG=Integer.parseInt(args[6]);
+		RANK_CHORD_TONE_GEN=Integer.parseInt(args[7]);
+		RANK_DIATONIC_EVER=Integer.parseInt(args[8]);
+		RANK_STEPWISE = Integer.parseInt(args[9]);
+		RANK_CHORDAL_LEAP=Integer.parseInt(args[10]);
+		RANK_LEAP_PUNISH_R1 = Integer.parseInt(args[11]);
+		RANK_LEAP_PUNISH_R2 = Integer.parseInt(args[12]);
+		RANK_LEAP_PUNISH_R3 = Integer.parseInt(args[13]);
+		RANK_LEAP_PUNISH_R4 = Integer.parseInt(args[14]);
+		RANK_LEAP_PUNISH_TRI = Integer.parseInt(args[15]);
+		RANK_CHANGE_ON_STRONG = Integer.parseInt(args[16]);
+		RANK_CHANGE_FROM_PREV_STRONG = Integer.parseInt(args[17]);
+		RANK_QUARTER_NOTE_REWARD = Integer.parseInt(args[18]);
+		RANK_DOUBLE_EIGHT_REWARD = Integer.parseInt(args[19]);
+		RANK_RANGE_REWARD = Integer.parseInt(args[20]);
+
 		Comparator<Melody> comparator = new MelodyComp();
 
 		for(int i = 0; i < DATASET_SIZE; i ++){
@@ -50,7 +92,7 @@ public class runner {
 			//"breed" the best melodies
 			if(Math.random()>.5){queue.poll();}
 			//50% chance of discarding the most fit
-			//prevents case where the top tier are paird mating with eachother not chaning
+			//prevents case where the top tier are paird mating with eachother not changing
 
 			for(int j = 0; j <DATASET_SIZE/4; j ++){
 				Melody curA = queue.poll();
@@ -78,8 +120,13 @@ public class runner {
 		for(int i = 0; i <DATASET_SIZE; i++){
 			dataset.get(i).fitness = rank(dataset.get(i));
 		}
-
-		Collections.sort(dataset,comparator);
+		try{
+			Collections.sort(dataset,comparator);	
+		}catch(Exception e){
+			e.printStackTrace();
+			System.out.println(dataset);
+			return;
+		}
 		System.out.println("Finished, final Dataset");
 		printDataset("out/"+TIMESTAMP);
 	}
@@ -92,83 +139,144 @@ public class runner {
 			int cur = m.melody.get(i);
 			
 			//if note is "do" to start
+			//RANK_STARTDO
 			if(cur%12 == 0 && i == 0){
-				rank +=300;
+				rank +=RANK_STARTDO;
 			}
 			//if note is "do" to finish
+			//RANK_ENDDO
 			if(cur%12 == 0 && i == m.melody.size()-1){
-				rank +=300;
+				rank +=RANK_ENDDO;
 			}
+
+			//if note is "ti" or "ray" second to last
+			//RANK_SECOND_TO_LAST
+			if((cur%12 == 2 || cur%12==11) && i == m.melody.size()-2){
+				rank +=RANK_SECOND_TO_LAST;
+			}
+
 			//if note is part of the chord on strong beat
+			//RANK_CHORD_TONE_STRONG
 			int chordIndex = i/16;
 			if(i%4 == 0){
 				for(int j = 0; j<chordTones[chordIndex].length; j++) {
 					if(cur%12 == chordTones[chordIndex][j]){
-						rank += 50;
+						rank += RANK_CHORD_TONE_STRONG;
 					}
 				}
 			}
 
 			//if the note is part of the chord at all
+			//RANK_CHORD_TONE_GEN
 			for(int j = 0; j<chordTones[chordIndex].length; j++) {
 				if(cur%12 == chordTones[chordIndex][j]){
-					rank += 30;
+					rank += RANK_CHORD_TONE_GEN;
 				}
 			}
 
 			//if it is diatonic
+			//RANK_DIATONIC_EVER
 			for(int j = 0; j< diatonicTones.length; j ++){
 				if(cur%12 == diatonicTones[j]){
-					rank += 170;
-				}else{
-					rank -=20;
+					rank += RANK_DIATONIC_EVER;
 				}
 			}
-
-			if(i!=0){	//comparisons to previous notes
-
-				//if note is a repeated note
-				if(cur == m.melody.get(i-1)){rank += 10;}
-
-				//if note changes on a new beat
-				if(i % 4 == 0 && cur != m.melody.get(i-1)){rank += 30;}
-
-				//if note changes from the previous strong beat
-				if(i % 4 == 0 && cur != m.melody.get(i-4)){rank += 50;}
-
-				//if note changes on an 8th note
-				if(cur != m.melody.get(i-1) && i % 2 == 0){rank += 30;}
-				
-				//if note changes does NOT change on a 16th note
-				if(cur == m.melody.get(i-1) && i % 2 == 1){rank += 10;}
-
+			//melodic leaps and stepwise motion
+			int pvi = prevNote(i,m);
+			if(pvi !=-1){	//comparisons to previous notes
 				//if note is stepwise from one before
-				if(Math.abs(cur-m.melody.get(i-1)) <3){rank += 30;}
-				
+
+				//RANK_STEPWISE
+				if(Math.abs(cur-m.melody.get(pvi)) <3){rank += RANK_STEPWISE;}
+				else{
+					for(int j = 0; j<chordTones[chordIndex].length; j++) {
+						if(cur%12 == chordTones[chordIndex][j]){
+							//RANK_CHORDAL_LEAP
+							rank+= RANK_CHORDAL_LEAP;
+						}
+					}
+				}
+				//if note is a leap from one before
+				//RANK_PUNISH_R1
+				if(Math.abs(cur-m.melody.get(pvi)) > 4){rank -= RANK_LEAP_PUNISH_R1;}
+
 				//if note is a huge from one before
-				if(Math.abs(cur-m.melody.get(i-1)) >8){rank -= 200;}
+				//RANK_PUNISH_R2
+				if(Math.abs(cur-m.melody.get(pvi)) >8){rank -= RANK_LEAP_PUNISH_R2;}
+
+				//if note is a huge from one before
+				//RANK_PUNISH_R3
+				if(Math.abs(cur-m.melody.get(pvi)) >11){rank -= RANK_LEAP_PUNISH_R3;}
+
+				//if note is a huge from one before
+				//RANK_PUNISH_R4
+				if(Math.abs(cur-m.melody.get(pvi)) >14){rank -= RANK_LEAP_PUNISH_R4;}
 
 				//if note is a TRITONE D:
-				if(Math.abs(cur-m.melody.get(i-1))%12==6){rank -= 200;}
-
+				//RANK_PUNISH_TRI
+				if(Math.abs(cur-m.melody.get(pvi))%12==6){rank -= RANK_LEAP_PUNISH_TRI;}
 			
 			}
+			//now all the rhythm
+			if(i%4 == 0){
+				if(i!=0){
+					//if note changes on a new beat
+					//RANK_CHANGE_ON_STRONG
+					if(cur != m.melody.get(i-1)){rank += RANK_CHANGE_ON_STRONG;}
+
+					//if note changes from the previous strong beat
+					//RANK_CHANGE_FROM_PREV_STRONG
+					if(cur != m.melody.get(i-4)){rank += RANK_CHANGE_FROM_PREV_STRONG;}
+				}
+				if(i!=m.melody.size()-1){
+					//if rhythm is 4th
+					//RANK_QUARTER_NOTE_REWARD
+					if(m.melody.get(i)==m.melody.get(i+1) &&
+						m.melody.get(i+1)==m.melody.get(i+2) &&
+						m.melody.get(i+2)==m.melody.get(i+3)){
+						rank+=RANK_QUARTER_NOTE_REWARD;
+					}
+					//if rhythm is 8th 8th
+					//RANK_DOUBLE_EIGHT_REWARD
+					if(m.melody.get(i)==m.melody.get(i+1) &&
+						m.melody.get(i+1)!=m.melody.get(i+2) &&
+						m.melody.get(i+2)==m.melody.get(i+3)){
+						rank+=RANK_DOUBLE_EIGHT_REWARD;
+					}				
+				}
+			}
 			//if note is in a reasonable range (g3 - e5)
-			if(cur > 42 && cur < 65) {rank += 5;}
+			//RANK_RANGE_REWARD
+			if(cur > 42 && cur < 65) {rank += 5;}else{rank-=RANK_RANGE_REWARD;}
 		}
 
 		//System.out.println(rank);
 		return rank;
 	}
 
+	private static int prevNote(int index, Melody m){
+		int ret = index;
+		while(ret>0){
+			ret--;
+			if(m.melody.get(ret)!=m.melody.get(index)){
+				return ret;
+			}
+		}
+		return -1;
+	}
+
 	private static void vitals(int index){
 		double average = 0;
+		double max = Integer.MIN_VALUE;
 		for(int i = 0; i < DATASET_SIZE; i ++){
 			double cur = dataset.get(i).fitness;
 			average += cur;
+			if(cur>max){
+				max = cur;
+			}
 		}
 		average = average / DATASET_SIZE;
-		log+= ", "+average;
+		log+= ", "+max;
 	}
 
 	private static void outToFiles(String status){
@@ -193,7 +301,9 @@ public class runner {
 		Melody best = dataset.get(0);
 		try {
 			PrintWriter writer = new PrintWriter(status+"/melody.ly", "UTF-8");
-			writer.println("\\header{title = \"Grown Melody\"}\n\n\\score{\n\\absolute {");
+			writer.println("#(set-global-staff-size 25)");
+			writer.println("\\header{tagline = \" \"}\n\n\\score{\n\\absolute {");
+			writer.println("\\override Score.BarNumber.break-visibility = ##(#f #f #f) ");
 			writer.println(best.toLilypond());
 			writer.println("\n}\n\\midi{}\n\\layout{}\n}");
 			writer.close();

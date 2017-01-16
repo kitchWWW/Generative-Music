@@ -1,13 +1,14 @@
 import java.util.ArrayList;
+import java.util.concurrent.ThreadLocalRandom;
 
 
 public class Melody{
 
 
-	static double MUT_BUMP_PRB = .03;
-	static double MUT_NEWNOTE_PRB = .01;
-	static double MUT_JOIN_PRB = .05;
-	static double BREED_SWAP_PRB = .05;
+	static double MUT_BUMP_PRB = .01;
+	static double MUT_NEWNOTE_PRB = .001;
+	static double MUT_JOIN_PRB = .01;
+	static double BREED_SWAP_PRB = .005;
 
 	static String[] noteNames = {"c","cis","d","dis","e","f","fis","g","gis","a","ais","b"};
 
@@ -55,11 +56,27 @@ public class Melody{
 	}
 
 	public static Melody breed(Melody a, Melody b){
+		ArrayList<Integer> possibleSwapSpots = new ArrayList<>();
+		for(int i = 0; i < a.melody.size(); i ++){
+			if(Math.abs(a.melody.get(i) - b.melody.get(i))<5){
+				possibleSwapSpots.add(i);
+			}
+		}
+		int swapSpot = -1;
+		if(possibleSwapSpots.isEmpty()){
+			swapSpot = ThreadLocalRandom.current().nextInt(0, a.melody.size());
+			swapSpot = (swapSpot/4)*4;
+		}else{
+			swapSpot = possibleSwapSpots.get(ThreadLocalRandom.current().nextInt(0, possibleSwapSpots.size()));
+		}
 		Melody ret = new Melody(a.melody.size());
+
 		Boolean fromA = Math.random()>.5;
 		for(int i = 0 ; i <a.melody.size(); i ++){
 			ret.melody.set(i,(fromA)?a.melody.get(i): b.melody.get(i));
-			if(Math.random()<BREED_SWAP_PRB){fromA = !fromA;}
+			if(i == swapSpot){
+				fromA = ! fromA;
+			}
 		}
 		return ret;
 	}
