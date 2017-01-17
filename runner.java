@@ -137,8 +137,12 @@ public class runner {
 	public static void printDataset(String location){
 		try {
 			PrintWriter writer = new PrintWriter(location+"/melody.ly", "UTF-8");
+			writer.println("#(set-global-staff-size 25)");
+
 			writer.println("\\header{tagline = \"\"}\n\n\\score{\n << \n");
-			writer.println("\\absolute {\n"+ dataset.get(0).toLilypond()+"\n}");
+			writer.println("\\absolute {\n"+
+				"\\override Score.BarNumber.break-visibility = ##(#f #f #f)"
+				+ dataset.get(0).toLilypond()+"\n}");
 			writer.println("\n>>\n\\midi{}\n\\layout{}\n}");
 			writer.close();
 		} catch (FileNotFoundException | UnsupportedEncodingException e) {

@@ -11,7 +11,7 @@ java runner 800 600 $timestamp 400 400 400 100 30 2400 100 20 150 250 250 1000 5
 echo "Completed run"
 cd out/$timestamp
 
-/Applications/Lilypond.app/Contents/Resources/bin/lilypond -fpng melody.ly
+/Applications/Lilypond.app/Contents/Resources/bin/lilypond -fpng -dresolution=310 melody.ly
 convert melody.png -trim melody.png 1> _Image.log
 
 open melody.png
