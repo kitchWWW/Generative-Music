@@ -34,11 +34,18 @@ public class runner {
 	static int RANK_RANGE_REWARD = 500;
 
 
+	static int firstNote = 0;
+	static int lastNote = 0;
+
+	static Boolean[] SCALE = new Boolean[12];
+	static Boolean[][] CHORDS = new Boolean[4][12];
+
+
 	static int MELODY_LENGTH = 4*4*4+1; 	//4 bars, 4/4 16th as the smallest divison, plus a down beat
 	
 
 	static int[][] chordTones = {{0,4,7},{5,9,0},{2,5,9},{2,7,11,5},{0,4}};
-	static int[] diatonicTones = {0,2,4,5,7,9,11};
+	static Boolean[] diatonicTones = {true,false,true,false,true,true,false,true,false,true,false,true};
 	static String log = "[0";
 	static String TIMESTAMP = "";
 
@@ -70,6 +77,22 @@ public class runner {
 		RANK_QUARTER_NOTE_REWARD = Integer.parseInt(args[18]);
 		RANK_DOUBLE_EIGHT_REWARD = Integer.parseInt(args[19]);
 		RANK_RANGE_REWARD = Integer.parseInt(args[20]);
+
+		firstNote = Integer.parseInt(args[21]);
+		lastNote = Integer.parseInt(args[22]);
+
+		int s = 23;
+		for(int z = 0; z <12; z ++){
+			SCALE[z] = Boolean.parseBoolean(args[z+s]);
+		}
+		s = s+12;
+		for(int z = 0; z<4; z++){
+			for(int x = 0; x < 12; x++){
+				CHORDS[z][x] = Boolean.parseBoolean(args[s+z*12+x]);
+			}
+		}
+
+		//Ok, now we have pulled everything from the void or args[]
 
 		Comparator<Melody> comparator = new MelodyComp();
 
@@ -138,7 +161,7 @@ public class runner {
 		try {
 			PrintWriter writer = new PrintWriter(location+"/melody.ly", "UTF-8");
 			writer.println("#(set-global-staff-size 25)");
-
+			writer.println("\\paper {indent = 0\\cm}");
 			writer.println("\\header{tagline = \"\"}\n\n\\score{\n << \n");
 			writer.println("\\absolute {\n"+
 				"\\override Score.BarNumber.break-visibility = ##(#f #f #f)"
@@ -156,7 +179,7 @@ public class runner {
 
 		for(int i = 0; i < m.melody.size(); i++){
 			int cur = m.melody.get(i);
-			
+			if(cur<0){cur = 0;}
 			//if note is "do" to start
 			//RANK_STARTDO
 			if(cur%12 == 0 && i == 0){
@@ -178,28 +201,22 @@ public class runner {
 			//RANK_CHORD_TONE_STRONG
 			int chordIndex = i/16;
 			if(i%4 == 0){
-				for(int j = 0; j<chordTones[chordIndex].length; j++) {
-					if(cur%12 == chordTones[chordIndex][j]){
-						rank += RANK_CHORD_TONE_STRONG;
-					}
+				if(CHORDS[chordIndex][cur%12]){
+					rank += RANK_CHORD_TONE_STRONG;
 				}
 			}
-
 			//if the note is part of the chord at all
 			//RANK_CHORD_TONE_GEN
-			for(int j = 0; j<chordTones[chordIndex].length; j++) {
-				if(cur%12 == chordTones[chordIndex][j]){
-					rank += RANK_CHORD_TONE_GEN;
-				}
+			if(CHORDS[chordIndex][cur%12]){
+				rank += RANK_CHORD_TONE_GEN;
 			}
 
 			//if it is diatonic
 			//RANK_DIATONIC_EVER
-			for(int j = 0; j< diatonicTones.length; j ++){
-				if(cur%12 == diatonicTones[j]){
-					rank += RANK_DIATONIC_EVER;
-				}
+			if(diatonicTones[cur%12]){
+				rank+= RANK_DIATONIC_EVER;
 			}
+			
 			//melodic leaps and stepwise motion
 			int pvi = prevNote(i,m);
 			if(pvi !=-1){	//comparisons to previous notes
