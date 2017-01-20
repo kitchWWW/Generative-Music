@@ -7,7 +7,7 @@ find . -name "*.class" -type f -delete
 javac runner.java
 echo "Completed compile portion"
 
-java runner 800 600 $timestamp 400 400 400 100 30 2400 100 20 150 250 250 1000 500 200 200 200 200 500
+java runner 800 600 $timestamp 400 400 400 100 30 2400 100 20 150 250 250 1000 500 200 200 200 200 500 0 0 true false true false true true false true false true false true true false false false true false false true false false false false true false false false false true false false false true false false false false true false false true false false false true false false false false true false false true false true false false false true 
 echo "Completed run"
 cd out/$timestamp
 

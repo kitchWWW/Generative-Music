@@ -199,7 +199,7 @@ public class runner {
 
 			//if note is part of the chord on strong beat
 			//RANK_CHORD_TONE_STRONG
-			int chordIndex = i/16;
+			int chordIndex = (i/16)%4;
 			if(i%4 == 0){
 				if(CHORDS[chordIndex][cur%12]){
 					rank += RANK_CHORD_TONE_STRONG;
