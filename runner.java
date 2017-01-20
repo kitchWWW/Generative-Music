@@ -36,6 +36,8 @@ public class runner {
 
 	static int firstNote = 0;
 	static int lastNote = 0;
+	static int lowestNote = 0;
+	static int highestNote = 0;
 
 	static Boolean[] SCALE = new Boolean[12];
 	static Boolean[][] CHORDS = new Boolean[4][12];
@@ -45,7 +47,6 @@ public class runner {
 	
 
 	static int[][] chordTones = {{0,4,7},{5,9,0},{2,5,9},{2,7,11,5},{0,4}};
-	static Boolean[] diatonicTones = {true,false,true,false,true,true,false,true,false,true,false,true};
 	static String log = "[0";
 	static String TIMESTAMP = "";
 
@@ -80,8 +81,10 @@ public class runner {
 
 		firstNote = Integer.parseInt(args[21]);
 		lastNote = Integer.parseInt(args[22]);
+		lowestNote = Integer.parseInt(args[23]);
+		highestNote = Integer.parseInt(args[24]);
 
-		int s = 23;
+		int s = 25;
 		for(int z = 0; z <12; z ++){
 			SCALE[z] = Boolean.parseBoolean(args[z+s]);
 		}
@@ -91,7 +94,6 @@ public class runner {
 				CHORDS[z][x] = Boolean.parseBoolean(args[s+z*12+x]);
 			}
 		}
-
 		//Ok, now we have pulled everything from the void or args[]
 
 		Comparator<Melody> comparator = new MelodyComp();
@@ -211,9 +213,9 @@ public class runner {
 				rank += RANK_CHORD_TONE_GEN;
 			}
 
-			//if it is diatonic
+			//if it is diatonic / part of the scale.
 			//RANK_DIATONIC_EVER
-			if(diatonicTones[cur%12]){
+			if(SCALE[cur%12]){
 				rank+= RANK_DIATONIC_EVER;
 			}
 			
@@ -283,7 +285,7 @@ public class runner {
 			}
 			//if note is in a reasonable range (g3 - e5)
 			//RANK_RANGE_REWARD
-			if(cur > 42 && cur < 65) {rank += 5;}else{rank-=RANK_RANGE_REWARD;}
+			if(cur >= lowestNote && cur <= highestNote) {rank += 0;}else{rank-=RANK_RANGE_REWARD;}
 		}
 		return rank;
 	}
